@@ -1,0 +1,22 @@
+{
+	"manifest_version": 2,
+	"name": "MiniGIF",
+	"description": "An image tagging extension to easily retrieve the perfect image for any situation",
+	"version": "0.0.1",
+	"permissions": [
+		"contextMenus"
+	],
+	"icons": {
+	},
+	"background": {
+		"scripts": [
+			"js/bg.js",
+			"js/db/db.js",
+			"js/db/images.js"
+		]
+	},
+	"browser_action": {
+		"default_popup": "search.html"
+	},
+	"options_page": "options.html"
+}
