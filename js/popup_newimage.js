@@ -5,13 +5,17 @@
  */
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+	if (msg.action !== "configure_new_image_window") {
+		return;
+	}
+
 	var tagform    = document.getElementById('newimage');
 	var taginput   = document.getElementById('tags_tag');
 	var imgelement = document.getElementById('image');
 	var tagslist   = document.getElementById('tags');
 	var tags = [];
 
-	imgelement.src = msg.imgSrc;
+	imgelement.src = msg.data.img.src;
 
 	tagform.addEventListener('submit', function(evt) {
 		evt.preventDefault();
@@ -24,8 +28,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 			chrome.runtime.sendMessage({
 				action: "add_image",
 				data: {
-					imgSrc: msg.imgSrc,
-					tags:   tags
+					src:  msg.data.img.src,
+					tags: tags
 				}
 			}, function(img) {
 				chrome.windows.getCurrent(function(win) {

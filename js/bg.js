@@ -15,11 +15,11 @@ chrome.contextMenus.create({
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	switch (msg.action) {
 	case 'display_new_image_window':
-		showAddImagePopup(msg.data.imgSrc);
+		showAddImagePopup(msg.data.img.src);
 
 		return false;
 	case 'add_image':
-		Images.save(msg.data.imgSrc, msg.data.tags, function(err, img) {
+		Images.save(msg.data.src, msg.data.tags, function(err, img) {
 			if (err) {
 				console.error("Unable to save image:", err);
 				return;
@@ -42,7 +42,9 @@ function addImageToCollection(info, tab) {
 	chrome.runtime.sendMessage({
 		action: "display_new_image_window",
 		data: {
-			imgSrc: info.srcUrl
+			img: {
+				src: info.srcUrl
+			}
 		}
 	});
 }
@@ -62,6 +64,13 @@ function showAddImagePopup(imgSrc) {
 		focused: true,
 		type:    "detached_panel"
 	}, function(win) {
-		chrome.tabs.sendMessage(win.tabs[0].id, {imgSrc: imgSrc});
+		chrome.tabs.sendMessage(win.tabs[0].id, {
+			action: "configure_new_image_window",
+			data: {
+				img: {
+					src: imgSrc
+				}
+			}
+		});
 	});
 }

@@ -10,7 +10,7 @@ var searchForm, searchResults;
 function form_onSubmit(evt) {
 	evt.preventDefault();
 
-	Images.getRange(0, 100, function(err, imgs) {
+	Images.getByTag(evt.target.elements.namedItem('search_tag').value, function(err, imgs) {
 		if (err) {
 			onerror(err);
 			return;
@@ -32,12 +32,12 @@ function results_renderImages(imgs) {
 	searchResults.appendChild(frag);
 };
 
-function toSelectableImage(imgSrc) {
+function toSelectableImage(img) {
 	var el = document.createElement('div');
-	var img = new Image();
+	var imgEl = new Image();
 
-	el.appendChild(img);
-	img.src = imgSrc;
+	el.appendChild(imgEl);
+	imgEl.src = img.src;
 
 	return el;
 }

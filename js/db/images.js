@@ -6,24 +6,8 @@
 
 var Images = {};
 
-Images.STORE_NAME = "images";
-
-/**
- * Gets a transaction for the image store
- *
- * @param {string} mode The transaction mode (DB.READWRITE or DB.READ)
- * @param {function(?Error, ?IDBTransaction)} callback
- */
-Images._getTransaction = function images_gettransaction(mode, callback) {
-	DB.get(function(err, db) {
-		if (err) {
-			console.err("Could not get transaction for images;", err);
-			return;
-		}
-
-		callback(null, db.transaction([Images.STORE_NAME], mode) );
-	});
-};
+Images.STORE_NAME = 'images';
+Images.INDEX_TAG  = 'tags';
 
 /**
  * Save an image into the database. Updates existing images if they already
@@ -35,19 +19,21 @@ Images._getTransaction = function images_gettransaction(mode, callback) {
  *        when the save completes
  */
 Images.save = function images_save(imgSrc, tags, callback) {
-	Images._getTransaction(DB.READWRITE, function(err, trans) {
-		var store = trans.objectStore(Images.STORE_NAME);
-		var request = store.put({
-			src: imgSrc,
+	DB.transaction(DB.READWRITE, [Images.STORE_NAME], function(trans) {
+		var imageStore = trans.objectStore(Images.STORE_NAME);
+
+		var img = {
+			src:  imgSrc,
 			tags: (Array.isArray(tags) ? tags : [].concat(tags))
-		});
+		};
+		imageStore.put(img);
 
 		trans.oncomplete = function(e) {
-			callback(null, null);
+			callback(trans.error, img);
 		};
 
-		trans.onerror = function(e) {
-			callback(e, null);
+		trans.onerror = function(evt) {
+			callback(trans.error, null);
 		};
 	});
 };
@@ -59,36 +45,21 @@ Images.save = function images_save(imgSrc, tags, callback) {
  * @param {function(?Error, Array.<Img>} callback
  */
 Images.getByTag = function images_getbytag(tag, callback) {
-	setTimeout(callback.bind(null, new Error("Not implemented"), null), 0);
-};
+	DB.transaction(DB.READWRITE, [Images.STORE_NAME], function(trans) {
+		var imageStore = trans.objectStore(Images.STORE_NAME);
+		var tagIndex   = imageStore.index(Images.INDEX_TAG);
 
-/**
- * Get all images in a specified range (for browsing)
- *
- * @param {number} begin
- * @param {number} end
- * @param {function(?Error, ?Array.<Img>} callback
- */
-Images.getRange = function images_getrange(begin, end, callback) {
-	Images._getTransaction(DB.READ, function(err, trans) {
-		var store = trans.objectStore(Images.STORE_NAME);
-		var cursor = store.openCursor();
+		var imgs   = [];
+		var cursor = tagIndex.openCursor(IDBKeyRange.only(tag));
 
-		var ret = [];
 		cursor.onsuccess = function(evt) {
-			if (evt.target.result) {
-				ret.push(evt.target.result.value.src);
-
-				event.target.result.continue();
+			var curs = event.target.result;
+			if (curs) {
+				imgs.push(curs.value);
+				curs.continue();
+			} else {
+				callback(null, imgs);
 			}
-		};
-
-		trans.oncomplete = function(evt) {
-			callback(null, ret);
-		};
-
-		trans.onerror = function(evt) {
-			callback(evt.target.error, null);
 		};
 	});
 };
