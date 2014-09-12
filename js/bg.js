@@ -32,6 +32,15 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	}
 });
 
+chrome.commands.onCommand.addListener(function(command) {
+	switch (command) {
+	case 'show-search':
+		chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+			showSearchPopup(tabs[0]);
+		});
+	}
+});
+
 /**
  * Add the selected image to the MiniGIF collection
  *
@@ -71,6 +80,27 @@ function showAddImagePopup(imgSrc) {
 					src: imgSrc
 				}
 			}
+		});
+	});
+}
+
+function showSearchPopup(tab) {
+	chrome.tabs.executeScript(null, { file: "js/inpagesearch.js" }, function(v) {
+		chrome.windows.create({
+			url:     "search.html",
+			left:    screen.width - 225,
+			width:   175,
+			top:     100,
+			height:  screen.height - 200,
+			focused: true,
+			type:    "detached_panel"
+		}, function (win) {
+			chrome.tabs.sendMessage(win.tabs[0].id, {
+				action: 'configure_select_image_window',
+				data:   {
+					tabId: tab.id,
+				}
+			});
 		});
 	});
 }
