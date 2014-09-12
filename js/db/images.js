@@ -50,7 +50,7 @@ Images.getByTag = function images_getbytag(tag, callback) {
 		var tagIndex   = imageStore.index(Images.INDEX_TAG);
 
 		var imgs   = [];
-		var cursor = tagIndex.openCursor(IDBKeyRange.only(tag));
+		var cursor = tagIndex.openCursor(getPartialKeyRange(tag));
 
 		cursor.onsuccess = function(evt) {
 			var curs = event.target.result;
@@ -63,3 +63,10 @@ Images.getByTag = function images_getbytag(tag, callback) {
 		};
 	});
 };
+
+function getPartialKeyRange(key) {
+	var upperBound = key.substring(0, key.length - 1);
+	upperBound += String.fromCharCode(key.charCodeAt(key.length - 1) + 1);
+
+	return IDBKeyRange.bound(key, upperBound, false, true);
+}
