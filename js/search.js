@@ -16,44 +16,14 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	targetTab = msg.data.tabId;
 });
 
-function form_onSubmit(evt) {
-	evt.preventDefault();
-
-	Images.getByTag(document.getElementById('search_tag').value, function(err, imgs) {
-		if (err) {
-			onerror(err);
-			return;
-		}
-
-		results_renderImages(imgs);
-	});
-}
-
-function image_onselect(evt) {
-	var target = evt.target;
-	while (target && !target.classList.contains('selectable-image')) {
-		target = target.parentElement;
-	}
-
-	if ( !target ) {
-		return;
-	}
-
-	switch (evt.type) {
-	case 'keypress':
-		if (evt.keyCode === 13) {
-			// user pressed enter
-			insertImage(target.children[0].src);
-		}
-		break;
-	case 'click':
-		insertImage(target.children[0].src);
-		break;
-	}
-}
-
+/**
+ * insertImage finishes the image selection process by sending the image source
+ * URI back to the target tab, to be inserted into the page as necessary
+ *
+ * @param {string} src
+ */
 function insertImage(src) {
-	if (!targetTab) {
+	if ( !targetTab ) {
 		return;
 	}
 
@@ -67,6 +37,81 @@ function insertImage(src) {
 	}, function() {
 		window.close();
 	});
+}
+/**
+ * Fetch the images matching the given partial tag and update the search results
+ * with the matches
+ *
+ * @param {string} partialTag
+ */
+function updateSearch(partialTag) {
+	Images.getByTag(partialTag, function(err, imgs) {
+		if ( err ) {
+			console.error(err);
+			return;
+		}
+
+		results_renderImages( imgs );
+	});
+}
+
+/**
+ * EventHandler satisfies the EventHandler interface to be used as an object
+ * in HTMLElement.addEventListener. It dispatches events to the nearest containing
+ * element with a `data-on[type]` attribute's bound function, if one exists.
+ */
+var EventHandler = {};
+EventHandler.handleEvent = function(evt) {
+	var evtGroup = EventHandler.events[ evt.type ];
+	if ( !evtGroup ) {
+		return;
+	}
+
+	var target = evt.target;
+	while ( target && !target.hasAttribute('data-on' + evt.type) ) {
+		target = target.parentElement;
+	}
+
+	if ( !target ) {
+		return;
+	}
+
+	var action = evtGroup[ target.getAttribute('data-on' + evt.type) ];
+	if ( action ) {
+		action( evt, target );
+	}
+}
+
+EventHandler.events = {};
+
+EventHandler.events.input = {};
+EventHandler.events.input['update-search'] = function update_search_input(evt, target) {
+	updateSearch( target.value );
+};
+
+EventHandler.events.keypress = {};
+EventHandler.events.keypress['select-image'] = function select_image(evt, target) {
+	if ( evt.keyCode === 13 ) {
+		insertImage( target.children[0].src );
+	}
+};
+
+EventHandler.events.click = {};
+EventHandler.events.click['select-image'] = function select_image_click(evt, target) {
+	while ( target && !target.classList.contains('selectable-image') ) {
+		target = target.parentElement;
+	}
+
+	if ( target ) {
+		evt.preventDefault();
+		insertImage( target.children[0].src );
+	}
+};
+
+function form_onSubmit(evt) {
+	evt.preventDefault();
+
+	updateSearch( evt.target['search_tag'].value );
 }
 
 function results_renderImages(imgs) {
@@ -87,22 +132,20 @@ function toSelectableImage(img) {
 	var imgEl = new Image();
 
 	el.classList.add('selectable-image');
+	el.setAttribute('data-onkeypress', 'select-image');
+	el.setAttribute('data-onclick', 'select-image')
 	el.appendChild(imgEl);
 	imgEl.src = img.src;
 
 	return el;
 }
 
-function onerror(err) {
-	console.error(err);
-}
-
-window.addEventListener('load', init, false);
-function init() {
+window.addEventListener('load', function init() {
 	searchForm = document.getElementById('search');
 	searchResults = document.getElementById('search-results');
 
 	searchForm.addEventListener('submit', form_onSubmit, false);
-	document.addEventListener('keypress', image_onselect, false);
-	document.addEventListener('click', image_onselect, false);
-}
+	Object.keys(EventHandler.events).forEach(function(evtName) {
+		document.addEventListener(evtName, EventHandler, false);
+	});
+}, false);
