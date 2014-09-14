@@ -21,8 +21,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
  * URI back to the target tab, to be inserted into the page as necessary
  *
  * @param {string} src
+ * @param {string} format
  */
-function insertImage(src) {
+function insertImage(src, format) {
 	if ( !targetTab ) {
 		return;
 	}
@@ -30,6 +31,7 @@ function insertImage(src) {
 	chrome.tabs.sendMessage(targetTab, {
 		action: 'insert_image',
 		data: {
+			format: format,
 			img: {
 				src: src
 			}
@@ -91,8 +93,27 @@ EventHandler.events.input['update-search'] = function update_search_input(evt, t
 
 EventHandler.events.keypress = {};
 EventHandler.events.keypress['select-image'] = function select_image(evt, target) {
-	if ( evt.keyCode === 13 ) {
-		insertImage( target.children[0].src );
+	switch ( evt.keyCode ) {
+	case 13:
+		// on enter, insert the source directly
+		insertImage( target.children[0].src, 'raw' );
+		break;
+
+	case 99:
+		// on `c`, copy img src to clipboard
+		// TODO
+		console.warn("Copy to clipboard not implemented");
+		break;
+
+	case 104:
+		// on `h`, insert html
+		insertImage( target.children[0].src, 'html' );
+		break;
+
+	case 109:
+		// on `m`, insert markdown
+		insertImage( target.children[0].src, 'markdown' );
+		break;
 	}
 };
 
