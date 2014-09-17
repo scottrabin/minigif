@@ -11,15 +11,29 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		return;
 	}
 
-	switch ( msg.data.format ) {
+	var format = msg.data.format;
+	if ( msg.data.format === 'auto' ) {
+		if ( element.isContentEditable ) {
+			format = 'embed';
+		} else {
+			format = 'raw';
+		}
+	}
+
+	switch ( format ) {
 	case 'raw':
 		insertImage( element, msg.data.img.src );
 		break;
+	case 'embed':
 	case 'html':
 		var el = document.createElement('img');
 		el.setAttribute('src', msg.data.img.src);
 		// TODO insert the actual element if the target element can accept it
-		insertImage( element, (element.isContentEditable ? el : el.outerHTML) );
+		var ins = el;
+		if ( format === 'html' || !element.isContentEditable ) {
+			ins = el.outerHTML;
+		}
+		insertImage( element, ins );
 		break;
 	case 'markdown':
 		insertImage( element, "[" + msg.data.img.src + "](" + msg.data.img.src + ")" );
@@ -95,4 +109,7 @@ function replaceCurrentSelection_isContentEditable(element, value) {
 		range.setStartBefore(node);
 		range.setEndAfter(node);
 	}
+
+	selection.removeAllRanges();
+	selection.addRange(range);
 }

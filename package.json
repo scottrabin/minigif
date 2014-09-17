@@ -1,0 +1,21 @@
+{
+  "name": "minigif",
+  "version": "0.0.1",
+  "description": "An image tagging extension to easily retrieve the perfect image for any situation",
+  "main": "index.js",
+  "scripts": {
+    "build": "node-sass --include-path ./sass sass/minigif.scss css/minigif.css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/scottrabin/minigif.git"
+  },
+  "author": "Scott Rabin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/scottrabin/minigif/issues"
+  },
+  "dependencies": {
+    "react": "~0.11.2"
+  }
+}

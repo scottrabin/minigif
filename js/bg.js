@@ -12,6 +12,19 @@ chrome.contextMenus.create({
 	"onclick":  addImageToCollection
 });
 
+// When the browser action is clicked, open the options page
+chrome.browserAction.onClicked.addListener(function(currentTab) {
+	var optionsUrl = chrome.extension.getURL('manage.html');
+
+	chrome.tabs.query({ url: optionsUrl }, function(tabs) {
+		if ( tabs.length ) {
+			chrome.tabs.update( tabs[0].id, { active: true } );
+		} else {
+			chrome.tabs.create( { url: optionsUrl } );
+		}
+	});
+});
+
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	switch (msg.action) {
 	case 'display_new_image_window':

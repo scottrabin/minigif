@@ -1,0 +1,19 @@
+.imagesearch {
+
+	.imagesearch--container {
+	}
+
+	.imagesearch--imgframe {
+		display: inline-block;
+		margin: $imagesearch-image-spacing;
+		height: $imagesearch-image-height;
+		width: $imagesearch-image-width;
+		text-align: center;
+
+		img {
+			max-width: 100%;
+			max-height: 100%;
+			vertical-align: middle;
+		}
+	}
+}
