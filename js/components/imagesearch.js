@@ -13,7 +13,6 @@ var ImageSearchImage = React.createClass({
 	},
 	render: function() {
 		var attrs = {};
-		attrs.key = this.props.img.src;
 		attrs.src = this.props.img.src;
 
 		if ( this.props.tabIndex ) {
@@ -82,12 +81,13 @@ var ImageSearch = React.createClass({
 				this.state.imgs.map(function(img) {
 					return React.DOM.div(
 						{
+							key:       img.src,
 							className: 'imagesearch--imgframe'
 						}, ImageSearchImage({
-							img: img,
-							tabIndex: tabIndex++,
+							img:        img,
+							tabIndex:   tabIndex++,
 							onKeyPress: this.props.onKeyPress,
-							onClick: this.props.onClick
+							onClick:    this.props.onClick
 						})
 					);
 				}, this)
