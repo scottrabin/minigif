@@ -7,12 +7,23 @@
 var ManagementPage = React.createClass({
 	getInitialState: function() {
 		return {
+			tags: [],
 			searchTag: ""
 		};
+	},
+	componentWillMount: function() {
+		this.props.backgroundPage.Images.getTags(function(err, tags) {
+			this.setState({ tags: tags })
+		}.bind(this));
 	},
 	searchForTag: function(tag) {
 		this.setState({
 			searchTag: tag
+		});
+	},
+	onImageSelected: function(evt, img) {
+		this.setState({
+			editing: img
 		});
 	},
 	render: function() {
@@ -20,12 +31,14 @@ var ManagementPage = React.createClass({
 			{
 				className: 'management-page'
 			},
+			(this.state.editing ? ImageTagEditor({ img : this.state.editing }) : null),
 			ImageSearch({
 				Images: this.props.backgroundPage.Images,
+				onClick: this.onImageSelected,
 				searchTag: this.state.searchTag
 			}),
 			TagList({
-				Images: this.props.backgroundPage.Images,
+				tags: this.state.tags,
 				onSelectTag: this.searchForTag
 			})
 		)

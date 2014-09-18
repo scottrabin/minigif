@@ -15,7 +15,7 @@ Images.INDEX_TAG  = 'tags';
  *
  * @param {string} imgSrc The image URI
  * @param {Array.<string>} tags Tags that apply to the given image
- * @param {function(?Error, ?Array.<Img>)} callback function to execute
+ * @param {function(?Error, ?GIFImage)} callback function to execute
  *        when the save completes
  */
 Images.save = function images_save(imgSrc, tags, callback) {

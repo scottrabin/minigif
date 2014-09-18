@@ -24,27 +24,16 @@ var SelectableTag = React.createClass({
 });
 
 var TagList = React.createClass({
-	getInitialState: function() {
-		return {
-			tags: []
-		};
-	},
-	componentWillMount: function() {
-		this.props.Images.getTags(function(err, tags) {
-			if ( err ) {
-				console.error( err );
-				tags = [];
-			}
-
-			this.setState( { tags: tags } );
-		}.bind(this));
+	propTypes: {
+		tags:        React.PropTypes.array.isRequired,
+		onSelectTag: React.PropTypes.func
 	},
 	render: function() {
 		return React.DOM.ul(
 			{
 				className: 'taglist'
 			},
-			this.state.tags.map(function(tag) {
+			this.props.tags.map(function(tag) {
 				return React.DOM.li(
 					{
 						key: tag
@@ -55,6 +44,6 @@ var TagList = React.createClass({
 					})
 				);
 			}, this)
-		)
+		);
 	}
 });
