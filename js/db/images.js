@@ -64,6 +64,34 @@ Images.getByTag = function images_getbytag(tag, callback) {
 	});
 };
 
+/**
+ * Get a list of all tags in the database
+ *
+ * @param {function(?Error, Array.<string>)} callback
+ */
+Images.getTags = function images_gettags(callback) {
+	DB.transaction(DB.READWRITE, [Images.STORE_NAME], function(trans) {
+		var imageStore = trans.objectStore(Images.STORE_NAME);
+		var tagIndex   = imageStore.index(Images.INDEX_TAG);
+
+		var tags   = {};
+		var cursor = tagIndex.openKeyCursor();
+		cursor.onsuccess = function(evt) {
+			var curs = evt.target.result;
+			if ( curs ) {
+				tags[curs.key] = true;
+				curs.continue();
+			} else {
+				callback( null, Object.keys(tags) );
+			}
+		};
+
+		cursor.onerror = function(evt) {
+			callback( evt.target.error, [] );
+		};
+	});
+};
+
 function getPartialKeyRange(key) {
 	var upperBound = key.substring(0, key.length - 1);
 	upperBound += String.fromCharCode(key.charCodeAt(key.length - 1) + 1);

@@ -32,23 +32,39 @@ var ImageSearchImage = React.createClass({
 var ImageSearch = React.createClass({
 	getInitialState: function() {
 		return {
+			searchTag: this.props.searchTag || "",
 			imgs: []
 		};
 	},
-	searchByTag: function(evt) {
+	componentWillReceiveProps: function(nextProps) {
+		if ( nextProps.searchTag && this.props.searchTag !== nextProps.searchTag ) {
+			this.setState({
+				searchTag: nextProps.searchTag
+			});
+		}
+	},
+	componentDidUpdate: function(prevProps, prevState) {
+		if ( prevState.searchTag !== this.state.searchTag ) {
+			this.props.Images.getByTag( this.state.searchTag, this.updateImages );
+		}
+	},
+	updateSearchTag: function(evt) {
 		if ( evt.type === 'submit' ) {
 			evt.preventDefault();
 		}
 
-		var self = this;
-		var tag  = this.refs.tagFilter.getDOMNode().value;
-		this.props.Images.getByTag(tag, function(err, imgs) {
-			if ( err ) {
-				console.error(err);
-				imgs = [];
-			}
+		this.setState({
+			searchTag: this.refs.tagFilter.getDOMNode().value
+		});
+	},
+	updateImages: function(err, imgs) {
+		if ( err ) {
+			console.error( err );
+			imgs = [];
+		}
 
-			self.setState({ imgs: imgs });
+		this.setState({
+			imgs: imgs
 		});
 	},
 	render: function() {
@@ -57,7 +73,7 @@ var ImageSearch = React.createClass({
 		return React.DOM.form(
 			{
 				className: 'imagesearch',
-				onSubmit:  this.searchByTag,
+				onSubmit:  this.updateSearchTag,
 			},
 			React.DOM.div(
 				{
@@ -67,8 +83,9 @@ var ImageSearch = React.createClass({
 					type:        'text',
 					ref:         'tagFilter',
 					placeholder: "Filter images by tag...",
+					value:       this.state.searchTag,
 					tabIndex:    tabIndex++,
-					onInput:     this.searchByTag
+					onChange:    this.updateSearchTag
 				}),
 				React.DOM.button({
 					type: 'submit'
