@@ -13,9 +13,9 @@
 	},
 	"background": {
 		"scripts": [
-			"js/bg.js",
-			"js/db/db.js",
-			"js/db/images.js"
+			"out/minigif-background/goog/base.js",
+			"minigif-background.js",
+			"js/background.js"
 		]
 	},
 	"browser_action": {
