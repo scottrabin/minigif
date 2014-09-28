@@ -19,6 +19,7 @@
 (defn- send-message-retry
   [tabid msg]
   (go
+    (<! (cljs.core.async/timeout 500)) ; TODO find a better way to send messages to tabs
     (loop []
       (js/console.debug "Sending message" msg "to tab" tabid)
       (let [resp (<! (cb->chan js/chrome.tabs.sendMessage tabid (clj->js msg)))]

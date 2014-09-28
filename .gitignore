@@ -1,5 +1,4 @@
 node_modules
-css
 pom.xml
 *jar
 /lib/
@@ -9,4 +8,4 @@ pom.xml
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/
-minigif-*.js
+dist/

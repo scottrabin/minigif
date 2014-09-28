@@ -13,8 +13,8 @@
 	},
 	"background": {
 		"scripts": [
-			"out/minigif-background/goog/base.js",
-			"minigif-background.js",
+			"js/out/minigif-background/goog/base.js",
+			"js/minigif-background.js",
 			"js/background.js"
 		]
 	},
