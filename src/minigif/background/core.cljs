@@ -21,7 +21,7 @@
                                             :type    :detached_panel}))]
       (chromate.tabs/really-send-message (-> win :tabs first)
                                          {:action :configure_select_image_window
-                                          :data {:tabId (:id tab)}}))))
+                                          :data {:tabid (:id tab)}}))))
 
 (defn- show-add-image-popup
   "Display a new window to allow a user to add tags for an image being added

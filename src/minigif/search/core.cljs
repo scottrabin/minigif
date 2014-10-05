@@ -1,5 +1,6 @@
 (ns minigif.search.core
   (:require
+    [chromate.tabs]
     [minigif.component.imagesearch]
     [reagent.core :as reagent]
     [cljs.core.async])
@@ -32,11 +33,14 @@
                   (when-let [fmt (fmt-map (.-key evt) nil)]
                     (insert-image img fmt)))}])
 
-(js/chrome.runtime.onMessage.addListener
-  (fn [msg sender sendResponse]
-    (when (= "configure_select_image_window" (.-action msg))
-      (reset! target-tab (-> msg .-data .-tabId))
-      (sendResponse))))
+(go
+  (let [port (<! (chromate.tabs/tab-accept))]
+    (loop []
+      (let [[msg _ _] (<! port)]
+        (if (= :configure_select_image_window (:action msg))
+          (reset! target-tab (-> msg :data :tabid))
+          (recur))))
+    (cljs.core.async/close! port)))
 
 (js/window.addEventListener
   "load"
