@@ -1,5 +1,6 @@
 (ns minigif.newimage.core
   (:require
+    [chromate.tabs]
     [chromate.windows]
     [minigif.common.images]
     [reagent.core :as reagent :refer [atom]]
@@ -39,12 +40,12 @@
   "load"
   (fn [_]
     (let [img (atom {})]
-      (js/chrome.runtime.onMessage.addListener
-        (fn [msg sender sendResponse]
-          (when (= "configure_new_image_window" (.-action msg))
-            (swap! img merge
-                   (js->clj (-> msg .-data .-img) :keywordize-keys true)
-                   {:tags #{}})
-            (js/console.debug "got msg" msg @img)
-            (sendResponse))))
-      (reagent/render-component [AddImagePage img] (.-body js/document)))))
+      (reagent/render-component [AddImagePage img] (.-body js/document))
+      (go
+        (let [port (<! (chromate.tabs/tab-accept))]
+          (loop []
+            (let [[conf-msg _ _] (<! port)]
+              (if (= :configure_new_image_window (:action conf-msg))
+                (reset! img (-> conf-msg :data :img))
+                (recur))))
+          (cljs.core.async/close! port))))))

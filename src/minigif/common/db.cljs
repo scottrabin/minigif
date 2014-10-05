@@ -28,8 +28,8 @@
                                    (.createObjectStore db "images" #js {:keyPath "src"}))
                       tagindex (if (.contains (.-indexNames imagestore) "tags")
                                  (.index imagestore "tags")
-                                 (.createIndex imagestore "tags" #js {:unique false
-                                                                      :multiEntry true}))])))
+                                 (.createIndex imagestore "tags" "tags" #js {:unique false
+                                                                             :multiEntry true}))])))
         (set! (.-onsuccess request)
               (fn [event]
                 (let [db (-> event .-target .-result)]

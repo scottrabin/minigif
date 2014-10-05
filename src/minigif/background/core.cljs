@@ -1,43 +1,12 @@
 (ns minigif.background.core
   (:require
     [chromate.tabs]
+    [chromate.windows]
     [minigif.common.images]
     [cljs.core.async])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
-(defn- cb->chan
-  [f & args]
-  (let [rc (cljs.core.async/chan)]
-    (apply f (conj
-               (vec args)
-               #(do
-                  (when-not (nil? %)
-                    (cljs.core.async/put! rc %))
-                  (cljs.core.async/close! rc))))
-    rc))
-
-(defn- send-message-retry
-  [tabid msg]
-  (go
-    (<! (cljs.core.async/timeout 500)) ; TODO find a better way to send messages to tabs
-    (loop []
-      (js/console.debug "Sending message" msg "to tab" tabid)
-      (let [resp (<! (cb->chan js/chrome.tabs.sendMessage tabid (clj->js msg)))]
-        (js/console.debug "response" resp js/chrome.runtime.lastError
-                          (nil? resp)
-                          (nil? js/chrome.runtime.lastError)
-                          )
-        (when (and (nil? resp) (not (nil? js/chrome.runtime.lastError)))
-          (recur))))))
-
-(defn- get-tabs
-  [query]
-  (cb->chan js/chrome.tabs.query (clj->js query)))
-
-(defn- exec-script
-  [target conf]
-  (cb->chan js/chrome.tabs.executeScript target (clj->js conf)))
 
 (defn- show-search-window
   [tab]
@@ -50,9 +19,9 @@
                                             :height  (- js/screen.height 200)
                                             :focused true
                                             :type    :detached_panel}))]
-      (chromate.tabs/send-message (-> win :tabs first :id)
-                                  {:action :configure_select_image_window
-                                   :data {:tabId (:id tab)}}))))
+      (chromate.tabs/really-send-message (-> win :tabs first)
+                                         {:action :configure_select_image_window
+                                          :data {:tabId (:id tab)}}))))
 
 (defn- show-add-image-popup
   "Display a new window to allow a user to add tags for an image being added
@@ -66,9 +35,9 @@
                                             :height  (- js/screen.height 200)
                                             :focused true
                                             :type    :detached_panel}))]
-      (chromate.tabs/send-message (-> win :tabs first :id)
-                                  {:action :configure_new_image_window
-                                   :data {:img {:src imgsrc}}}))))
+      (chromate.tabs/really-send-message (-> win :tabs first)
+                                         {:action :configure_new_image_window
+                                          :data {:img {:src imgsrc}}}))))
 
 ; configure the context menu item to show the Add Image popup for images
 (js/chrome.contextMenus.create
