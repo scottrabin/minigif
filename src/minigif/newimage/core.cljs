@@ -1,7 +1,6 @@
 (ns minigif.newimage.core
   (:require
-    [chromate.tabs]
-    [chromate.windows]
+    [cemerick.url :as url]
     [minigif.common.images]
     [reagent.core :as reagent :refer [atom]]
     [cljs.core.async])
@@ -19,8 +18,7 @@
       (go
         (let [res (<! (minigif.common.images.save-image! @img))]
           (if (= res @img)
-            (chromate.windows/remove (<! (chromate.windows/get-current)))
-            (js/alert res)))))))
+            (js/window.close)))))))
 
 (defn AddImagePage
   [img]
@@ -39,13 +37,8 @@
 (js/window.addEventListener
   "load"
   (fn [_]
-    (let [img (atom {})]
-      (reagent/render-component [AddImagePage img] (.-body js/document))
-      (go
-        (let [port (<! (chromate.tabs/tab-accept))]
-          (loop []
-            (let [[conf-msg _ _] (<! port)]
-              (if (= :configure_new_image_window (:action conf-msg))
-                (reset! img (-> conf-msg :data :img))
-                (recur))))
-          (cljs.core.async/close! port))))))
+    (let [query (-> js/window.location url/url :query)
+          imgsrc (get query "img")
+          imgtags (get query "tags")
+          img (atom {:src imgsrc :tags (apply set imgtags)})]
+      (reagent/render-component [AddImagePage img] (.-body js/document)))))

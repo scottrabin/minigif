@@ -27,17 +27,17 @@
   "Display a new window to allow a user to add tags for an image being added
   to the collection"
   [imgsrc]
-  (go
-    (let [win (<! (chromate.windows/create {:url     "popup_newimage.html"
-                                            :top     100
-                                            :left    100
-                                            :width   (- js/screen.width 200)
-                                            :height  (- js/screen.height 200)
-                                            :focused true
-                                            :type    :detached_panel}))]
-      (chromate.tabs/really-send-message (-> win :tabs first)
-                                         {:action :configure_new_image_window
-                                          :data {:img {:src imgsrc}}}))))
+  (chromate.windows/create {:url     (-> "popup_newimage.html"
+                                         js/chrome.extension.getURL
+                                         url/url
+                                         (assoc-in [:query :img] imgsrc)
+                                         str)
+                            :top     100
+                            :left    100
+                            :width   (- js/screen.width 200)
+                            :height  (- js/screen.height 200)
+                            :focused true
+                            :type    :detached_panel}))
 
 ; configure the context menu item to show the Add Image popup for images
 (js/chrome.contextMenus.create
