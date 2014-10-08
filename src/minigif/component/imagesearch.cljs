@@ -19,31 +19,34 @@
 
 (defn- update-image-search
   "Internal method for updating ImageSearch component with matching images"
-  [imgs e]
-  (.preventDefault e)
-  (let [form (if (nil? (-> e .-target .-form))
-               (-> e .-target)
-               (-> e .-target .-form))
-        input (.namedItem (.-elements form) "search-term")
-        search-term (.-value input)]
-    (if (= 0 (count search-term))
+  [imgs search-term]
+  (if (= "" search-term)
       (reset! imgs [])
       (go
-        (reset! imgs (<! (minigif.common.images/get-images search-term)))))))
+        (reset! imgs (<! (minigif.common.images/get-images search-term))))))
 
 (defn ImageSearch
   "Image search component that allows input for tags to match against images"
-  [{:keys [search-term onKeyPress onClick autoFocus] :or {:autoFocus false}}]
+  []
   (let [images (atom [])
+        search (atom {:prop "" :current ""})
         do-search (partial update-image-search images)]
-    (fn []
+    (fn [{:keys [search-term onKeyPress onClick autoFocus] :or {:autoFocus false}}]
+      (when-not (= (:prop @search) search-term)
+        (swap! search assoc :current search-term :prop search-term)
+        (do-search (:current @search)))
       [:form {:className "imagesearch"
-              :onSubmit  do-search}
+              :onSubmit  #(do
+                            (.preventDefault %)
+                            (do-search (:current @search)))}
        [:input {:placeholder "Filter images by tag..."
                 :name        "search-term"
+                :value       (:current @search)
                 :tabIndex    1
                 :autoFocus   autoFocus
-                :onChange    do-search}]
+                :on-change    #(let [v (-> % .-target .-value)]
+                                 (swap! search assoc :current v)
+                                 (do-search v))}]
        [:div {:className "imagesearch--container"}
         (map #(vector ImageSearchResult {:img        %1
                                          :key        (:src %1)

@@ -69,3 +69,24 @@
                                   (cljs.core.async/put! result @agg)
                                   (cljs.core.async/close! result))))))))
     result))
+
+(defn get-tags
+  "Get all of the tags used on any image in the database"
+  []
+  (let [result (cljs.core.async/chan)]
+    (db/transact! db/READ ["images"]
+                  (fn [transaction]
+                    (let [imagestore (.objectStore transaction "images")
+                          tagindex (.index imagestore "tags")
+                          cursor (.openKeyCursor tagindex)
+                          agg (atom #{})]
+                      (set! (.-onsuccess cursor)
+                            (fn [event]
+                              (if-let [cursor (-> event .-target .-result)]
+                                (do
+                                  (swap! agg conj (-> cursor .-key))
+                                  (.continue cursor))
+                                (do
+                                  (cljs.core.async/put! result @agg)
+                                  (cljs.core.async/close! result))))))))
+    result))
