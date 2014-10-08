@@ -6,6 +6,7 @@
                  [org.clojure/clojurescript "0.0-2342"]
                  [reagent "0.4.2"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 [com.cemerick/url "0.1.1"]
                  [chromate "0.37.0-SNAPSHOT"]]
 
   :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]

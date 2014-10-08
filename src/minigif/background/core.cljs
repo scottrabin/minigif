@@ -1,27 +1,27 @@
 (ns minigif.background.core
   (:require
+    [cemerick.url :as url]
     [chromate.tabs]
     [chromate.windows]
-    [minigif.common.images]
     [cljs.core.async])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
-
 (defn- show-search-window
   [tab]
   (go
-    (let [_ (<! (chromate.tabs/execute-script (:id tab) {:file "js/inpagesearch.js"}))
-          win (<! (chromate.windows/create {:url     "search.html"
-                                            :top     100
-                                            :left    (- js/screen.width 225)
-                                            :width   175
-                                            :height  (- js/screen.height 200)
-                                            :focused true
-                                            :type    :detached_panel}))]
-      (chromate.tabs/really-send-message (-> win :tabs first)
-                                         {:action :configure_select_image_window
-                                          :data {:tabid (:id tab)}}))))
+    (<! (chromate.tabs/execute-script (:id tab) {:file "js/inpagesearch.js"}))
+    (chromate.windows/create {:url     (-> "search.html"
+                                           js/chrome.extension.getURL
+                                           url/url
+                                           (assoc-in [:query :tab] (:id tab))
+                                           str)
+                              :top     100
+                              :left    (- js/screen.width 225)
+                              :width   175
+                              :height  (- js/screen.height 200)
+                              :focused true
+                              :type    :detached_panel})))
 
 (defn- show-add-image-popup
   "Display a new window to allow a user to add tags for an image being added
