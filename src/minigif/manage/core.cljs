@@ -9,9 +9,10 @@
 
 (defn TagList
   [{:keys [tags onClick]}]
-  [:ul {:class "tag-list"}
+  [:ul {:class "taglist"}
    (for [tag tags]
-     [:li {:onClick #(onClick tag)} tag])])
+     [:li
+      [:span {:onClick #(onClick tag)}tag]])])
 
 (defn ManagePage
   [tags]

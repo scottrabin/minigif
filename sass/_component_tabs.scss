@@ -1,22 +1,21 @@
 .tabs {
 	.tabs--header {
 		list-style-type: none;
-		border-bottom: 5px solid #678b3f;
-		padding: 5px 5px 2px 0;
+		padding: 5px;
+		background-color: #222;
 
 		li {
 			display: inline-block;
 			color: white;
-			background-color: #678b3f;
 			margin: 0 2px 0 0;
 			padding: 3px 6px;
 			text-decoration: none;
 			letter-spacing: 1px;
-			border-radius: 5px 5px 0 0;
+			cursor: pointer;
 		}
 
 		li.active {
-			background: #8cb85c;
+			border-bottom: 2px solid #ddd;
 		}
 	}
 

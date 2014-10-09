@@ -1,0 +1,24 @@
+.taglist {
+	@include screen-xs {
+		-webkit-column-count: 2;
+	}
+	@include screen-med {
+		-webkit-column-count: 3;
+	}
+	@include screen-lg {
+		-webkit-column-count: 4;
+	}
+
+	li {
+		padding: 5px;
+
+		span {
+			color: blue;
+			cursor: pointer;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+}

@@ -1,9 +1,21 @@
 @import "_config";
+@import "_util";
 
 * { box-sizing: border-box; }
+
+@import "_reset";
+
 html, body {
-	font-family: Helvetica, sans-serif;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+	font-weight: 300;
 }
 
 @import "_component_imagesearch";
 @import "_component_tabs";
+@import "_component_taglist";
+
+#manage-tabs {
+	.tabs--body {
+		padding: 5px;
+	}
+}
