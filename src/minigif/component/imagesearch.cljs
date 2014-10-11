@@ -31,10 +31,11 @@
   (let [images (atom [])
         search (atom {:prop "" :current ""})
         do-search (partial update-image-search images)]
-    (fn [{:keys [search-term onKeyPress onClick autoFocus] :or {:autoFocus false}}]
-      (when-not (= (:prop @search) search-term)
-        (swap! search assoc :current search-term :prop search-term)
-        (do-search (:current @search)))
+    (fn [{:keys [search-term onKeyPress onClick autoFocus] :or {:autoFocus false :search-term ""}}]
+      (let [term (str search-term)]
+      (when-not (= (:prop @search) term)
+        (swap! search assoc :current term :prop term)
+        (do-search (:current @search))))
       [:form {:className "imagesearch"
               :onSubmit  #(do
                             (.preventDefault %)
