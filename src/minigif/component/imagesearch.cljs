@@ -33,9 +33,9 @@
         do-search (partial update-image-search images)]
     (fn [{:keys [search-term onKeyPress onClick autoFocus] :or {:autoFocus false :search-term ""}}]
       (let [term (str search-term)]
-      (when-not (= (:prop @search) term)
-        (swap! search assoc :current term :prop term)
-        (do-search (:current @search))))
+        (when-not (= (:prop @search) term)
+          (swap! search assoc :current term :prop term)
+          (do-search (:current @search))))
       [:form {:className "imagesearch"
               :onSubmit  #(do
                             (.preventDefault %)
