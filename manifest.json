@@ -24,7 +24,8 @@
 	"commands": {
 		"show-search": {
 			"suggested_key": {
-				"default": "Ctrl+J"
+				"default": "Ctrl+U",
+				"mac": "Ctrl+Shift+U"
 			},
 			"description": "Show the search popup for inserting an image"
 		}
