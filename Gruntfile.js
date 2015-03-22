@@ -23,18 +23,18 @@ module.exports = function(grunt) {
 				]
 			}
 		},
-		babel: {
-			options: {
-				sourceMap: false
-			},
-			dist: {
-				files: [{
-					expand: true,
-					cwd:    'src/js',
-					src:    '**/*.js',
-					dest:   'dist/js/',
-					filter: 'isFile'
-				}]
+		webpack: {
+			all: {
+				entry: './src/js/bg.js',
+				output: {
+					path: 'dist/js',
+					filename: 'bg.js'
+				},
+				module: {
+					loaders: [
+						{ test: /\.js$/, exclude: /node_modules/, loader: 'babel-loader' }
+					]
+				}
 			}
 		},
 		sass: {
@@ -50,5 +50,5 @@ module.exports = function(grunt) {
 		clean: ['dist']
 	});
 
-	grunt.registerTask('default', ['clean', 'copy', 'sass', 'babel'])
+	grunt.registerTask('default', ['clean', 'copy', 'sass', 'webpack'])
 };
