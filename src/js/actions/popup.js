@@ -4,11 +4,11 @@ export const CONFIGURE_SELECT_IMAGE_WINDOW = "configure_select_image_window";
 /**
  * Display the popup window to add a new image to the collection
  *
- * @param {string} imgSrc The image source URI
+ * @param {string} imageSrc The image source URI
  */
-function showAddImagePopup(imgSrc) {
+export function showAddImagePopup(imageSrc) {
 	chrome.windows.create({
-		url:     "popup_newimage.html",
+		url:     chrome.extension.getURL('popup_newimage.html'),
 		left:    100,
 		width:   screen.width - 200,
 		top:     100,
@@ -17,10 +17,10 @@ function showAddImagePopup(imgSrc) {
 		type:    "detached_panel"
 	}, function(win) {
 		chrome.tabs.sendMessage(win.tabs[0].id, {
-			action: CONFIGURE_NEW_IMAGE_WINDOW,
+			type: CONFIGURE_NEW_IMAGE_WINDOW,
 			data: {
-				img: {
-					src: imgSrc
+				image: {
+					src: imageSrc
 				}
 			}
 		});
@@ -28,22 +28,20 @@ function showAddImagePopup(imgSrc) {
 }
 
 export function showSearchPopup(tab) {
-	chrome.tabs.executeScript(null, { file: "js/inpagesearch.js" }, function(v) {
-		chrome.windows.create({
-			url:     "search.html",
-			left:    screen.width - 225,
-			width:   175,
-			top:     100,
-			height:  screen.height - 200,
-			focused: true,
-			type:    "detached_panel"
-		}, function (win) {
-			chrome.tabs.sendMessage(win.tabs[0].id, {
-				action: CONFIGURE_SELECT_IMAGE_WINDOW,
-				data:   {
-					tabId: tab.id,
-				}
-			});
+	chrome.windows.create({
+		url:     chrome.extension.getURL('popup_search.html'),
+		left:    screen.width - 225,
+		width:   175,
+		top:     100,
+		height:  screen.height - 200,
+		focused: true,
+		type:    "detached_panel"
+	}, function (win) {
+		chrome.tabs.sendMessage(win.tabs[0].id, {
+			type: CONFIGURE_SELECT_IMAGE_WINDOW,
+			data: {
+				tabId: tab.id,
+			}
 		});
 	});
 }

@@ -1,114 +1,103 @@
-/*!
- * @license
- * Copyright (c) 2014 Scott Rabin
- * See the LICENSE file in the repository root for the full license governing this code
- */
+import { map } from 'lodash';
+import ImageStore from '../stores/image';
+import * as imageActions from '../actions/images';
 
-var ImageSearchImage = React.createClass({
-	onKeyPress: function(evt) {
-		this.props.onKeyPress(evt, this.props.img);
-	},
-	onClick: function(evt) {
-		this.props.onClick(evt, this.props.img);
-	},
-	render: function() {
-		var attrs = {};
-		attrs.src = this.props.img.src;
-
-		if ( this.props.tabIndex ) {
-			attrs.tabIndex = this.props.tabIndex;
-		}
-		if ( this.props.onKeyPress ) {
-			attrs.onKeyPress = this.onKeyPress;
-		}
-		if ( this.props.onClick ) {
-			attrs.onClick = this.onClick;
-		}
-
-		return React.DOM.img(attrs);
+class ImageSearchFrame extends React.Component {
+	constructor(props) {
+		this.onKeyPress = this.onKeyPress.bind(this);
+		this.onClick    = this.onClick.bind(this);
 	}
-});
+	onKeyPress(evt) {
+		if ( this.props.onKeyPress ) {
+			this.props.onKeyPress( evt, this.props.image );
+		}
+	}
+	onClick(evt) {
+		if ( this.props.onClick ) {
+			this.props.onClick( evt, this.props.image );
+		}
+	}
+	render() {
+		return (
+			<div className="imagesearch--imgframe">
+				<img
+					src={this.props.image.src}
+					tabIndex={this.props.tabIndex}
+					onKeyPress={this.onKeyPress}
+					onClick={this.onClick} />
+			</div>
+		);
+	}
+}
 
-var ImageSearch = React.createClass({
-	getInitialState: function() {
-		return {
-			searchTag: this.props.searchTag || "",
-			imgs: []
+class ImageSearch extends React.Component {
+	constructor(props) {
+		this.onChange        = this.onChange.bind(this);
+		this.updateSearchTag = this.updateSearchTag.bind(this);
+
+		this.state = {
+			searchTag: props.searchTag || ""
 		};
-	},
-	componentWillReceiveProps: function(nextProps) {
+	}
+	componentWillMount() {
+		ImageStore.addListener('change', this.onChange);
+	}
+	componentWillUnmount() {
+		ImageStore.removeListener('change', this.onChange);
+	}
+	componentWillReceiveProps(nextProps) {
 		if ( nextProps.searchTag && this.props.searchTag !== nextProps.searchTag ) {
-			this.setState({
-				searchTag: nextProps.searchTag
-			});
+			this.setSearchTag( nextProps.searchTag );
 		}
-	},
-	componentDidUpdate: function(prevProps, prevState) {
-		if ( prevState.searchTag !== this.state.searchTag ) {
-			this.props.Images.getByTag( this.state.searchTag, this.updateImages );
-		}
-	},
-	updateSearchTag: function(evt) {
+	}
+	onChange() {
+		this.forceUpdate();
+	}
+	setSearchTag(tag) {
+		imageActions.FetchImagesMatchingTag( tag );
+
+		this.setState({
+			searchTag: tag
+		});
+	}
+	updateSearchTag(evt) {
 		if ( evt.type === 'submit' ) {
 			evt.preventDefault();
 		}
 
-		this.setState({
-			searchTag: this.refs.tagFilter.getDOMNode().value
-		});
-	},
-	updateImages: function(err, imgs) {
-		if ( err ) {
-			console.error( err );
-			imgs = [];
-		}
-
-		this.setState({
-			imgs: imgs
-		});
-	},
-	render: function() {
-		var tabIndex = 1;
-
-		return React.DOM.form(
-			{
-				className: 'imagesearch',
-				onSubmit:  this.updateSearchTag,
-			},
-			React.DOM.div(
-				{
-					className: 'form-row'
-				},
-				React.DOM.input({
-					type:        'text',
-					ref:         'tagFilter',
-					placeholder: "Filter images by tag...",
-					value:       this.state.searchTag,
-					tabIndex:    tabIndex++,
-					onChange:    this.updateSearchTag
-				}),
-				React.DOM.button({
-					type: 'submit'
-				}, "Filter")
-			),
-			React.DOM.div(
-				{
-					className: 'imagesearch--container'
-				},
-				this.state.imgs.map(function(img) {
-					return React.DOM.div(
-						{
-							key:       img.src,
-							className: 'imagesearch--imgframe'
-						}, ImageSearchImage({
-							img:        img,
-							tabIndex:   tabIndex++,
-							onKeyPress: this.props.onKeyPress,
-							onClick:    this.props.onClick
-						})
-					);
-				}, this)
-			)
+		this.setSearchTag( React.findDOMNode(this.refs.tagFilter).value );
+	}
+	renderImageFrame(image, tabIndex) {
+		return (
+			<ImageSearchFrame
+				image={image}
+				tabIndex={tabIndex}
+				onKeyPress={this.props.onKeyPress}
+				onClick={this.props.onClick} />
 		);
 	}
-});
+	render() {
+		let tabIndex = 1;
+
+		return (
+			<form className="imagesearch" onSubmit={this.updateSearchTag}>
+				<div className="form-row">
+					<input
+						type="text"
+						ref="tagFilter"
+						placeholder="Filter images by tag..."
+						value={this.state.searchTag}
+						tabIndex={tabIndex++}
+						onChange={this.updateSearchTag} />
+					<button type="submit">Filter</button>
+				</div>
+				<div className="imagesearch--container">
+					{map(ImageStore.images,
+						 (image, index) => this.renderImageFrame(image, ++tabIndex + index))}
+				</div>
+			</form>
+		);
+	}
+}
+
+export default ImageSearch;

@@ -7,7 +7,7 @@ module.exports = function(grunt) {
 				files: [
 					{
 						src:    'node_modules/react/dist/react.min.js',
-						dest:   'dist/js/react.min.js'
+						dest:   'dist/js/vendor/react.min.js'
 					},
 					{
 						src:    'manifest.json',
@@ -25,10 +25,16 @@ module.exports = function(grunt) {
 		},
 		webpack: {
 			all: {
-				entry: './src/js/bg.js',
+				entry: {
+					"bg":             './src/js/bg.js',
+					"manage":         './src/js/manage.js',
+					"popup_newimage": './src/js/popup_newimage.js',
+					"popup_search":   './src/js/popup_search.js',
+					"inpage_search":  './src/js/inpage_search.js'
+				},
 				output: {
 					path: 'dist/js',
-					filename: 'bg.js'
+					filename: '[name].js'
 				},
 				module: {
 					loaders: [
@@ -47,8 +53,34 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		clean: ['dist']
+		clean: ['dist'],
+		watch: {
+			scripts: {
+				files: ['src/**/*.js'],
+				tasks: ['webpack'],
+				options: {
+					spawn: false
+				}
+			},
+			stylesheets: {
+				files: ['src/**/*.scss'],
+				tasks: ['sass'],
+				options: {
+					spawn: false
+				}
+			},
+			templates: {
+				files: ['src/**/*.html'],
+				tasks: ['copy'],
+				options: {
+					spawn: false
+				}
+			}
+		}
 	});
 
-	grunt.registerTask('default', ['clean', 'copy', 'sass', 'webpack'])
+	grunt.registerTask('watch:all', ['watch:scripts', 'watch:stylesheets', 'watch:templates']);
+	grunt.registerTask('build',     ['copy', 'sass', 'webpack']);
+	grunt.registerTask('dev',       ['clean', 'build', 'watch'])
+	grunt.registerTask('default',   ['clean', 'build']);
 };

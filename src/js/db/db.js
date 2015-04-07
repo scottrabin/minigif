@@ -1,86 +1,67 @@
-/*!
- * @license
- * Copyright (c) 2014 Scott Rabin
- * See the LICENSE file in the repository root for the full license governing this code
- */
+const DB_NAME    = "MiniGIF";
+const DB_VERSION = 1;
 
-var DB = {};
-DB.NAME = "MiniGIF";
-DB.VERSION = 3;
+export const READ = 'readonly';
+export const READWRITE = 'readwrite';
 
-DB.READ = 'readonly';
-DB.READWRITE = 'readwrite';
-
-DB._db = null;
+export const IMAGE_STORE = 'images';
+export const IMAGE_STORE_INDEX_TAG = 'tags';
 
 /**
- * Get the connection to the DB. Open the connection if it is not already open.
+ * Run a transaction against the database
  *
- * @param {function(?Error, ?IDBDatabase)} callback
+ * @param {Array<string>} stores The stores to use in the transaction
+ * @param {string} mode The mode to use in the transaction; one of READ or READWRITE
+ * @param {function(?Error, ?IDBTransaction)} fn The function to execute the
+ *        transaction itself
  */
-DB.get = function get(callback) {
-	if (DB._db) {
-		setTimeout(callback.bind(null, null, DB._db), 0);
-		return;
-	}
+export function transact(stores, mode, fn) {
+	getDB(function(err, db) {
+		if (err) {
+			fn(err, null);
+		} else {
+			fn(null, db.transaction(stores, mode));
+		}
+	});
+}
 
-	var request = indexedDB.open(DB.NAME, DB.VERSION);
+/**
+ * Get the database, performing upgrades as necessary
+ * @private
+ *
+ * @param {function(?Error, ?IndexedDB)} callback
+ */
+function getDB(callback) {
+	var request = indexedDB.open(DB_NAME, DB_VERSION);
+	request.onerror = function onerror(event) {
+		console.error('open DB failure: %o', event);
+		callback(event.error, null);
+	};
+	request.onsuccess = function onsuccess(event) {
+		console.info('open DB success: %o', event);
+		callback(null, event.target.result);
+	};
 
-	request.onupgradeneeded = function(e) {
-		var db = e.target.result;
-		var transaction = e.target.transaction;
+	request.onupgradeneeded = function onupgradeneeded(event) {
+		let transaction = event.target.transaction;
+		let db = event.target.result;
+		console.log('transaction: %o db: %o', transaction, db);
+
 		var imageStore;
 
-		db.onerror = DB_onerror;
-		e.target.transaction.onerror = DB_onerror;
-
-		if (db.objectStoreNames.contains(Images.STORE_NAME)) {
-			imageStore = transaction.objectStore(Images.STORE_NAME);
+		if ( db.objectStoreNames.contains(IMAGE_STORE) ) {
+			imageStore = transaction.objectStore(IMAGE_STORE);
 		} else {
-			imageStore = db.createObjectStore(Images.STORE_NAME, {
-				keyPath: 'src'
+			imageStore = db.createObjectStore(IMAGE_STORE, {
+				"keyPath": "src"
 			});
 		}
 
-		if (!imageStore.indexNames.contains(Images.INDEX_TAG)) {
-			imageStore.createIndex(Images.INDEX_TAG, 'tags', {
+		if ( !imageStore.indexNames.contains(IMAGE_STORE_INDEX_TAG) ) {
+			imageStore.createIndex(IMAGE_STORE_INDEX_TAG, 'tags', {
 				unique:     false,
 				multiEntry: true
 			});
 		}
 	};
-
-	request.onsuccess = function(e) {
-		DB._db = e.target.result;
-		callback(null, DB._db);
-	};
-
-	request.onerror = function(e) {
-		callback(e, null);
-	};
-};
-
-/**
- * Executes a transaction against the database
- *
- * @param {string} mode Which mode the transaction will execute with (one of
- *        DB.READ or DB.READWRITE)
- * @param {string|Array.<string>} stores Which object stores the transaction
- *        will execute against
- * @param {function(IDBTransaction)} fn The function that will execute the
- *        contents of the transaction
- */
-DB.transaction = function transaction(mode, stores, fn) {
-	DB.get(function(err, db) {
-		if (err) {
-			console.error("Unable to get database for transaction:", err);
-			return;
-		}
-
-		fn(db.transaction(stores, mode));
-	});
-};
-
-function DB_onerror(e) {
-	console.error("Database error:", e);
 }

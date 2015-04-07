@@ -1,52 +1,65 @@
-/*!
- * @license
- * Copyright (c) 2014 Scott Rabin
- * See the LICENSE file in the repository root for the full license governing this code
- */
+import { map } from 'lodash';
+import ImageStore from './stores/image';
+import TagStore from './stores/tag';
+import ImageSearch from './components/imagesearch';
+import * as tagActions from './actions/tags';
+import * as imageActions from './actions/images';
 
-var ManagementPage = React.createClass({
-	getInitialState: function() {
-		return {
-			tags: [],
-			searchTag: ""
+class ManagementPage extends React.Component {
+	constructor(props) {
+		super(props);
+
+		this.onChange = this.onChange.bind(this);
+		this.state = {
+			selectedTag: null
 		};
-	},
-	componentWillMount: function() {
-		this.props.backgroundPage.Images.getTags(function(err, tags) {
-			this.setState({ tags: tags })
-		}.bind(this));
-	},
-	searchForTag: function(tag) {
-		this.setState({
-			searchTag: tag
-		});
-	},
-	onImageSelected: function(evt, img) {
-		this.setState({
-			editing: img
-		});
-	},
-	render: function() {
-		return React.DOM.div(
-			{
-				className: 'management-page'
-			},
-			(this.state.editing ? ImageTagEditor({ img : this.state.editing }) : null),
-			ImageSearch({
-				Images: this.props.backgroundPage.Images,
-				onClick: this.onImageSelected,
-				searchTag: this.state.searchTag
-			}),
-			TagList({
-				tags: this.state.tags,
-				onSelectTag: this.searchForTag
-			})
-		)
 	}
-})
+	componentWillMount() {
+		ImageStore.addListener('change', this.onChange);
+		TagStore.addListener('change', this.onChange);
+	}
+	componentWillUnmount() {
+		ImageStore.removeListener('change', this.onChange);
+		TagStore.removeListener('change', this.onChange);
+	}
+	onChange(_) {
+		this.forceUpdate();
+	}
+	showImagesByTag(tag) {
+		imageActions.FetchImagesByTag(tag);
 
-window.addEventListener('load', function init() {
-	React.renderComponent(ManagementPage({
-		backgroundPage: chrome.extension.getBackgroundPage()
-	}), document.body);
-}, false);
+		this.setState({
+			selectedTag: tag
+		});
+	}
+	renderTagLink(count, tag) {
+		return (
+			<li>
+				<a
+					href="#{tag}"
+					onClick={this.showImagesByTag.bind(this, tag)}>{tag} ({count})</a>
+			</li>
+		);
+	}
+	renderMatchingImages() {
+		if ( this.state.selectedTag ) {
+			return (
+				<ul>
+					{map(ImageStore.images, (image) => <img src={image.src} />)}
+				</ul>
+			);
+		}
+	}
+	render() {
+		return (
+			<div className="management-page">
+				<ul className="taglist">{map(TagStore.tags, this.renderTagLink, this)}</ul>
+				<ImageSearch />
+			</div>
+		);
+	}
+}
+
+React.render( <ManagementPage />, document.body );
+
+tagActions.FetchTags();

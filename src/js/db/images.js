@@ -1,97 +1,152 @@
-/*!
- * @license
- * Copyright (c) 2014 Scott Rabin
- * See the LICENSE file in the repository root for the full license governing this code
- */
-
-var Images = {};
-
-Images.STORE_NAME = 'images';
-Images.INDEX_TAG  = 'tags';
+import * as db from './db'
+import { unique } from 'lodash'
 
 /**
- * Save an image into the database. Updates existing images if they already
- * exist, or creates a new record otherwise.
- *
- * @param {string} imgSrc The image URI
- * @param {Array.<string>} tags Tags that apply to the given image
- * @param {function(?Error, ?GIFImage)} callback function to execute
- *        when the save completes
+ * Domain object representation of images in the database
+ * @class
  */
-Images.save = function images_save(imgSrc, tags, callback) {
-	DB.transaction(DB.READWRITE, [Images.STORE_NAME], function(trans) {
-		var imageStore = trans.objectStore(Images.STORE_NAME);
+export class MiniImage {
+	constructor(src, tags) {
+		this.src  = src;
+		this.tags = new Set( tags );
+	}
+	toJSON() {
+		let tags = [];
+		this.tags.forEach((tag) => tags.push(tag));
 
-		var img = {
-			src:  imgSrc,
-			tags: (Array.isArray(tags) ? tags : [].concat(tags))
+		return {
+			src:  this.src,
+			tags: tags
 		};
-		imageStore.put(img);
+	}
+}
 
-		trans.oncomplete = function(e) {
-			callback(trans.error, img);
-		};
+/** @const MiniImage */
+MiniImage.EMPTY = new MiniImage( "", [] );
 
-		trans.onerror = function(evt) {
-			callback(trans.error, null);
-		};
-	});
+// TODO
+MiniImage.fromJSON = function fromJSON(json) {
+	return new MiniImage( json.src, json.tags );
 };
 
 /**
- * Get all images tagged with the given query from the database
+ * Save a new image into the database
+ *
+ * @param {MiniImage} image the image to persist
+ * @param {function(?Error, ?MiniImage)} callback function to execute when the save
+ *        has completed
+ */
+export function save(image, callback) {
+	db.transact([db.IMAGE_STORE], db.READWRITE, function(err, txn) {
+		if ( err ) {
+			callback( err, null );
+			return;
+		}
+
+		let imageStore = txn.objectStore( db.IMAGE_STORE );
+
+		imageStore.put( image.toJSON() );
+
+		txn.oncomplete = function oncomplete(event) {
+			callback( txn.error, image );
+		};
+		txn.onerror = function onerror(event) {
+			callback( txn.error, image );
+		};
+	});
+}
+
+/**
+ * Get an image from the database by its src attribute
+ *
+ * @param {string} imageSrc
+ * @param {function(?Error, ?MiniImage)} callback
+ */
+export function getBySrc(imageSrc, callback) {
+	db.transact([db.IMAGE_STORE], db.READONLY, function(err, txn) {
+		if ( err ) {
+			callback( err, null );
+			return;
+		}
+
+		let imageStore = txn.objectStore(db.IMAGE_STORE);
+		let request    = imageStore.get(imageSrc);
+
+		request.onsuccess = function onsuccess(event) {
+			if ( event.target.result ) {
+				callback( null, MiniImage.fromJSON(event.target.result) );
+			} else {
+				callback( null, null );
+			}
+		};
+		request.onerror   = function onerror(event) {
+			callback( event.target.error, null );
+		};
+	});
+}
+
+/**
+ * Get all images in the database with a partial match to the given tag
+ *
+ * @param {string} tagPartial
+ * @param {function(?Error, ?Array<Image>)} callback
+ */
+export function getByTagPartial(tagPartial, callback) {
+	getImagesByKeyRange( getPartialKeyRange(tagPartial), callback );
+}
+
+/**
+ * Get all images matching a specific tag
  *
  * @param {string} tag
- * @param {function(?Error, Array.<Img>} callback
+ * @param {function(?Error, ?Array<MiniImage>} callback
  */
-Images.getByTag = function images_getbytag(tag, callback) {
-	DB.transaction(DB.READWRITE, [Images.STORE_NAME], function(trans) {
-		var imageStore = trans.objectStore(Images.STORE_NAME);
-		var tagIndex   = imageStore.index(Images.INDEX_TAG);
-
-		var imgs   = [];
-		var cursor = tagIndex.openCursor(getPartialKeyRange(tag));
-
-		cursor.onsuccess = function(evt) {
-			var curs = event.target.result;
-			if (curs) {
-				imgs.push(curs.value);
-				curs.continue();
-			} else {
-				callback(null, imgs);
-			}
-		};
-	});
-};
+export function getByTag(tag, callback) {
+	getImagesByKeyRange( IDBKeyRange.only(tag), callback );
+}
 
 /**
- * Get a list of all tags in the database
+ * Gets images from the database using the specified key range
+ * @private
  *
- * @param {function(?Error, Array.<string>)} callback
+ * @param {IDBKeyRange} range
+ * @param {function(?Error, ?Array<MiniImage>} callback
  */
-Images.getTags = function images_gettags(callback) {
-	DB.transaction(DB.READWRITE, [Images.STORE_NAME], function(trans) {
-		var imageStore = trans.objectStore(Images.STORE_NAME);
-		var tagIndex   = imageStore.index(Images.INDEX_TAG);
+function getImagesByKeyRange(range, callback) {
+	db.transact([db.IMAGE_STORE], db.READONLY, function(err, txn) {
+		if ( err ) {
+			callback( err, null );
+			return;
+		}
 
-		var tags   = {};
-		var cursor = tagIndex.openKeyCursor();
-		cursor.onsuccess = function(evt) {
-			var curs = evt.target.result;
+		let imageStore = txn.objectStore( db.IMAGE_STORE );
+		let tagIndex   = imageStore.index( db.IMAGE_STORE_INDEX_TAG );
+		let images     = [];
+		let cursor     = tagIndex.openCursor( range );
+
+		cursor.onsuccess = function onsuccess(event) {
+			var curs = event.target.result;
 			if ( curs ) {
-				tags[curs.key] = true;
+				images.push( curs.value );
 				curs.continue();
 			} else {
-				callback( null, Object.keys(tags) );
+				callback( null, images );
 			}
 		};
-
-		cursor.onerror = function(evt) {
-			callback( evt.target.error, [] );
+		cursor.onerror = function onerror(event) {
+			callback( txn.error, null );
 		};
 	});
-};
+}
 
+/**
+ * Get a key range that will match a partial key and any following characters
+ * after that key (e.g. "abc" will match "abcd" and "abce" but not "abd")
+ * @private
+ *
+ * @param {string} key
+ * @return {IDBKeyRange}
+ */
 function getPartialKeyRange(key) {
 	var upperBound = key.substring(0, key.length - 1);
 	upperBound += String.fromCharCode(key.charCodeAt(key.length - 1) + 1);

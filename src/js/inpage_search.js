@@ -1,56 +1,74 @@
-/*!
- * @license
- * Copyright (c) 2014 Scott Rabin
- * See the LICENSE file in the repository root for the full license governing this code
- */
+import * as format from './constants/format_constants';
 
-var element = document.activeElement;
+var activeElement = document.activeElement;
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	if (msg.action !== 'insert_image' || !element) {
+	// TODO
+	if ( msg.type !== 'insert_image' || !activeElement ) {
 		return;
 	}
 
-	var format = msg.data.format;
-	if ( msg.data.format === 'auto' ) {
-		if ( element.isContentEditable ) {
-			format = 'embed';
-		} else {
-			format = 'raw';
-		}
-	}
+	let fmt      = getFormat( activeElement, msg.data.format );
+	let contents = getInsertContents( activeElement, msg.data.image, fmt );
+	insertImage( activeElement, contents );
 
-	switch ( format ) {
-	case 'raw':
-		insertImage( element, msg.data.img.src );
-		break;
-	case 'embed':
-	case 'html':
-		var el = document.createElement('img');
-		el.setAttribute('src', msg.data.img.src);
-		// TODO insert the actual element if the target element can accept it
-		var ins = el;
-		if ( format === 'html' || !element.isContentEditable ) {
-			ins = el.outerHTML;
-		}
-		insertImage( element, ins );
-		break;
-	case 'markdown':
-		insertImage( element, "[" + msg.data.img.src + "](" + msg.data.img.src + ")" );
-		break;
-	default:
-		console.error("Unknown format: %s", msg.data.format);
-	}
-
-	element     = null;
-
-	// allow remote end to be notified that this is complete
 	sendResponse();
 });
 
+/**
+ * Gets the correct format for the given element
+ *
+ * @param {HTMLElement} element The element to consider for automatic formatting
+ * @param {Format} fmt The requested format type for the image
+ * @return {Format}
+ */
+function getFormat(element, fmt) {
+	if ( fmt !== format.FORMAT_AUTO ) {
+		return fmt;
+	} else if ( element.isContentEditable ) {
+		return format.FORMAT_EMBED;
+	} else {
+		return format.FORMAT_RAW;
+	}
+}
+
+/**
+ * Determine the content to insert into the given element based on the format
+ * type and target element's properties
+ *
+ * @param {HTMLElement} element
+ * @param {MiniImage} image
+ * @param {Format} fmt
+ * @return {string|HTMLElement} the content to insert
+ */
+function getInsertContents(element, image, fmt) {
+	switch ( fmt ) {
+	case format.FORMAT_RAW:
+		return image.src;
+
+	case format.FORMAT_MARKDOWN:
+		return "[" + image.src + "](" + image.src + ")";
+
+	case format.FORMAT_EMBED:
+	case format.FORMAT_HTML:
+		let imageElement = document.createElement( 'img' );
+		imageElement.setAttribute( 'src', image.src );
+
+		if ( fmt === format.FORMAT_HTML || !activeElement.isContentEditable ) {
+			return imageElement.outerHTML;
+		} else {
+			return imageElement;
+		}
+
+	default:
+		console.error( "Unknown image insertion format: %s", fmt );
+		return "";
+	}
+}
+
 function insertImage(element, value) {
 	var changeEvt = new Event('change', {
-		'bubbles': true,
+		'bubbles':    true,
 		'cancelable': false
 	});
 	element.dispatchEvent(changeEvt);

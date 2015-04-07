@@ -12,12 +12,15 @@
 	"icons": {
 	},
 	"background": {
-		"scripts": [
-			"js/bg.js",
-			"js/db/db.js",
-			"js/db/images.js"
-		]
+		"scripts": [ "js/bg.js" ]
 	},
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"js":      ["js/inpage_search.js"],
+			"run_at":  "document_end"
+		}
+	],
 	"browser_action": {
 	},
 	"options_page": "manage.html",
