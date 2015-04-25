@@ -22,7 +22,7 @@
 
   :cljsbuild {
     :builds {:background
-             {:source-paths ["src/minigif/background" "src/minigif/common"]
+             {:source-paths ["src/minigif/background" "src/minigif/common" "checkouts/chromate/src"]
               :compiler {:output-to "dist/js/minigif-background.js"
                          :output-dir "dist/js/out/minigif-background"
                          :optimizations :none

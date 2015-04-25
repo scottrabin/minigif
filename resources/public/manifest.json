@@ -6,9 +6,17 @@
 	"permissions": [
 		"tabs",
 		"contextMenus",
+		"identity",
 		"http://*/*",
 		"https://*/*"
 	],
+	"oauth2": {
+		"client_id": "148675981686-0n9cndn0bkfpdinckjvf18f5nt6v6fkc.apps.googleusercontent.com",
+		"scopes": [
+			"https://www.googleapis.com/auth/drive"
+		]
+	},
+	"key": "gndiljjeiogmiihmakificfdfcecoael",
 	"icons": {
 	},
 	"background": {

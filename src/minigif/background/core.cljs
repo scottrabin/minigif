@@ -3,6 +3,7 @@
     [cemerick.url :as url]
     [chromate.tabs]
     [chromate.windows]
+    [chromate.fs.google-drive :as google-drive]
     [cljs.core.async])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
@@ -64,3 +65,5 @@
       "show-search" (go
                       (let [[tab] (<! (chromate.tabs/query {:active true :currentWindow true}))]
                           (show-search-window tab))))))
+
+(google-drive/create "lol wut")
